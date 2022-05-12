@@ -1,0 +1,29 @@
+{
+  "name": "bor-bot",
+  "version": "1.0.0",
+  "description": "Music bot for discord write in Javascript using discord.js",
+  "main": "bor.js",
+  "scripts": {
+    "test": "node commands.js && node bor.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GabrielDomLacerda/Bor-bot.git"
+  },
+  "author": "Gabriel Lacerda",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GabrielDomLacerda/Bor-bot/issues"
+  },
+  "homepage": "https://github.com/GabrielDomLacerda/Bor-bot#readme",
+  "dependencies": {
+    "@discordjs/rest": "^0.4.1",
+    "discord-api-types": "^0.32.1",
+    "discord.js": "^13.6.0",
+    "dotenv": "^16.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.15.0"
+  },
+  "type": "module"
+}

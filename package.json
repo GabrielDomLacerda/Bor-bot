@@ -4,7 +4,7 @@
   "description": "Music bot for discord write in Javascript using discord.js",
   "main": "bor.js",
   "scripts": {
-    "test": "node commands.js && node bor.js"
+    "test": "node server-commands.js && node bor.js"
   },
   "repository": {
     "type": "git",
@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/GabrielDomLacerda/Bor-bot#readme",
   "dependencies": {
+    "@discordjs/builders": "^0.13.0",
     "@discordjs/rest": "^0.4.1",
     "discord-api-types": "^0.32.1",
     "discord.js": "^13.6.0",
@@ -25,5 +26,5 @@
   "devDependencies": {
     "eslint": "^8.15.0"
   },
-  "type": "module"
+  "type": "commonjs"
 }

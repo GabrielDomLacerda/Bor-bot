@@ -1,30 +1,37 @@
-import { Client, Intents } from 'discord.js';
-import { config } from 'dotenv';
-
-config();
+const { Client, Collection, Intents } = require('discord.js');
+const { TOKEN } = require('./config.js');
+const { readdirSync } = require('fs');
+const { join } = require('path');
 
 const client = new Client({
     intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
 });
 
-client.on('ready', () => {
-    console.log(`${client.user.tag} pronto para soltar o som!`);
+client.commands = new Collection();
+const commandsPath = join(__dirname, 'commands');
+const commandFiles = readdirSync(commandsPath).filter((file) =>
+    file.endsWith('js')
+);
+
+commandFiles.forEach((file) => {
+    const path = join(commandsPath, file);
+    const command = require(path);
+    client.commands.set(command.data.name, command);
 });
 
-client.on('interactionCreate', async (interaction) => {
-    console.log(
-        `${interaction.user.tag} fez uma interação em #${interaction.channel.name}.`
-    );
-    if (!interaction.isCommand()) return;
+const eventsPath = join(__dirname, 'events');
+const eventFiles = readdirSync(eventsPath).filter((file) =>
+    file.endsWith('.js')
+);
 
-    if (interaction.commandName === 'ping') {
-        await interaction.reply('Pong!');
+eventFiles.forEach((file) => {
+    const path = join(eventsPath, file);
+    const event = require(path);
+    if (event.once) {
+        client.once(event.name, event.execute.bind(null, client));
+    } else {
+        client.on(event.name, event.execute.bind(null, client));
     }
 });
 
-client.on('messageCreate', async (msg) => {
-    if (msg.author.bot) return;
-    await msg.reply(`Olá, @${msg.author.tag}`);
-});
-
-client.login(process.env.TOKEN);
+client.login(TOKEN);

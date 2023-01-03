@@ -1,7 +1,8 @@
+const { Events } = require('discord.js');
 const { PREFIX } = require('../config');
 
 module.exports = {
-    name: 'messageCreate',
+    name: Events.MessageCreate,
     async execute(client, msg) {
         if (msg.author.bot) return;
         if (msg.content.startsWith(PREFIX)) {

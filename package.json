@@ -17,10 +17,10 @@
   },
   "homepage": "https://github.com/GabrielDomLacerda/Bor-bot#readme",
   "dependencies": {
-    "@discordjs/builders": "^0.13.0",
-    "@discordjs/rest": "^0.4.1",
-    "discord-api-types": "^0.32.1",
-    "discord.js": "^13.6.0",
+    "@discordjs/builders": "^1.4.0",
+    "@discordjs/rest": "^1.5.0",
+    "discord-api-types": "^0.37.24",
+    "discord.js": "^14.7.1",
     "dotenv": "^16.0.1"
   },
   "devDependencies": {

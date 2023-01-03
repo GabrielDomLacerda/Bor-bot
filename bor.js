@@ -1,37 +1,27 @@
-const { Client, Collection, Intents } = require('discord.js');
+const { Client, Collection, GatewayIntentBits  } = require('discord.js');
 const { TOKEN } = require('./config.js');
-const { readdirSync } = require('fs');
-const { join } = require('path');
+const { importFeatures } = require('./importer.js');
 
 const client = new Client({
-    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
 client.commands = new Collection();
-const commandsPath = join(__dirname, 'commands');
-const commandFiles = readdirSync(commandsPath).filter((file) =>
-    file.endsWith('js')
-);
+importFeatures('commands', (command) => {
+    if ('data' in command && 'execute' in command) {
+		client.commands.set(command.data.name, command);
+	} else {
+		console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+	}
+})
 
-commandFiles.forEach((file) => {
-    const path = join(commandsPath, file);
-    const command = require(path);
-    client.commands.set(command.data.name, command);
-});
 
-const eventsPath = join(__dirname, 'events');
-const eventFiles = readdirSync(eventsPath).filter((file) =>
-    file.endsWith('.js')
-);
-
-eventFiles.forEach((file) => {
-    const path = join(eventsPath, file);
-    const event = require(path);
+importFeatures('events', (event) => {
     if (event.once) {
         client.once(event.name, event.execute.bind(null, client));
     } else {
         client.on(event.name, event.execute.bind(null, client));
     }
-});
+})
 
 client.login(TOKEN);

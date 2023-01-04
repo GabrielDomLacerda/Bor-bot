@@ -5,7 +5,9 @@ const { importFeatures } = require( './importer.js');
 const commands = [];
 
 importFeatures('commands', async (command) => {
-    commands.push(command.data.toJSON());
+    if ('data' in command && 'execute' in command) {
+        commands.push(command.data.toJSON());
+    }
 });
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);

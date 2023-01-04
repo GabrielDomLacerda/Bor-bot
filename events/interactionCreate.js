@@ -6,9 +6,8 @@ module.exports = {
         console.log(
             `${interaction.user.tag} fez uma interação no canal #${interaction.channel.name}.`
         );
-
         const command = client.commands.get(interaction.commandName);
-
+        
         if (!command) return;
 
         try {

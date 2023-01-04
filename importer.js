@@ -9,7 +9,7 @@ module.exports = {
         files.forEach((file) => {
             const pathToFile = path.join(fullPath, file)
             const feature = require(pathToFile)
-            action(feature)
+            action(feature, pathToFile)
         });
     }
 }

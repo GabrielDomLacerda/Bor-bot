@@ -6,14 +6,16 @@ module.exports = {
     async execute(client, msg) {
         if (msg.author.bot) return;
         if (msg.content.startsWith(PREFIX)) {
-            const name = msg.content.slice(PREFIX.length);
+            const noPrefixMessage = msg.content.slice(PREFIX.length);
+            const params = noPrefixMessage.split(' ')
+            const name = params.shift()
 
             const command = client.commands.get(name);
 
             if (!command) return;
 
             try {
-                await command.execute(msg);
+                await command.execute(msg, params);
             } catch (error) {
                 console.error(error);
                 await msg.reply({

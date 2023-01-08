@@ -2,7 +2,7 @@ const { Events } = require("discord.js")
 const { DEFAULT_DELETE_TIME } = require("./config")
 
 module.exports = {
-    ephemeralRespose: async function(interaction, message, eventType, time=DEFAULT_DELETE_TIME) {
+    ephemeralReply: async function(interaction, message, eventType, time=DEFAULT_DELETE_TIME) {
         const reply = await interaction.reply({
             content: message,
             ephemeral: true,

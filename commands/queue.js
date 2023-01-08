@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { ephemeralRespose } = require('../utils');
+const { ephemeralReply } = require('../utils');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -8,7 +8,7 @@ module.exports = {
     execute: async function (interaction, eventType, parameters) {
         const serverQueue = interaction.client.queue.get(interaction.guild.id)
         if (!serverQueue) {
-            ephemeralRespose(interaction, 'Lista vazia!', eventType)
+            ephemeralReply(interaction, 'Lista vazia!', eventType)
         } else {
             const queueTitles = serverQueue.songs.map((music, index) => {
                 if (index != 0) {

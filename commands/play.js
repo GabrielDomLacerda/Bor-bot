@@ -9,7 +9,7 @@ const { joinVoiceChannel,
         createAudioResource,
     } = require('@discordjs/voice');
 const { Events } = require('discord.js');
-const { ephemeralRespose } = require('../utils.js')
+const { ephemeralReply } = require('../utils.js')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -67,7 +67,7 @@ module.exports = {
                     queueContruct.songs.shift()
                     this.playMusic(interaction.client, interaction.guild.id, queueContruct.songs[0])
                 })
-                ephemeralRespose(interaction, `Agora tocando - ${music.title}`, eventType)
+                ephemeralReply(interaction, `Agora tocando - ${music.title}`, eventType)
                 return queueContruct
             } catch (error) {
                 console.error(error)
@@ -76,25 +76,12 @@ module.exports = {
             }
         }
         //IF THE GUILD QUEUE EXISTS, ENQUEUE THE MUSIC
-        ephemeralRespose(interaction, `${music.title} adicionado à fila`, eventType)
+        ephemeralReply(interaction, `${music.title} adicionado à fila`, eventType)
         serverQueue.songs.push(music)
         return serverQueue
     },
     execute: async function (interaction, eventType, parameters) {
         try {
-            //HANDLING PAUSE
-            if ((eventType == Events.MessageCreate && parameters === [])
-             || (eventType == Events.InteractionCreate && !interaction.options.getString('link-ou-busca'))) {
-                const serverQueue = interaction.cliente.queue.get(interaction.guild.id)
-                if (!serverQueue) {
-                    ephemeralRespose(interaction, 'Insira uma música, por favor', eventType)
-                } else {
-                    serverQueue.player.unpause()
-                    ephemeralRespose(interaction, `Agora tocando - ${serverQueue.songs[0]}`, eventType)    
-                }
-                return
-            }
-            
             //TESTING IF THE CALLER IS IN A VOICE CHANNEL
             const voiceChannel = interaction.member.voice.channel
             if (!await replyIfNullOrFalse(voiceChannel, interaction, "Entre em um canal de voz primeiro!", eventType)) { return }
@@ -103,6 +90,19 @@ module.exports = {
             const permissions = voiceChannel.permissionsFor(interaction.client.user)
             const hasPermission = (permissions.has('Connect') && permissions.has('Speak'))
             if (!await replyIfNullOrFalse(hasPermission, interaction, "Não possuo permissão para isso", eventType)) { return }
+
+            //HANDLING PAUSE
+            if ((eventType == Events.MessageCreate && parameters.length == 0)
+             || (eventType == Events.InteractionCreate && !interaction.options.getString('link-ou-busca'))) {
+                const serverQueue = interaction.client.queue.get(interaction.guild.id)
+                if (!serverQueue) {
+                    ephemeralReply(interaction, 'Insira uma música, por favor', eventType)
+                } else {
+                    serverQueue.player.unpause()
+                    ephemeralReply(interaction, `Agora tocando - ${serverQueue.songs[0].title}`, eventType)    
+                }
+                return
+            }
 
             //HANDLING PARAMETERS AND SEARCHING THE MUSIC WITH YOUTUBE API AND YTDL-CORE
             const params = eventType==Events.MessageCreate? parameters.join(' '): interaction.options.getString('link-ou-busca')
@@ -116,7 +116,7 @@ module.exports = {
             await this.enqueueMusic(interaction, voiceChannel, interaction.guild.id, eventType, music)
         } catch (error) {
             console.error(error)
-            ephemeralRespose(interaction, "Não foi possível executar esse comando", eventType)
+            ephemeralReply(interaction, "Não foi possível executar esse comando", eventType)
         }
     },
 }
@@ -159,7 +159,7 @@ function isLink (str) {
 
 async function replyIfNullOrFalse(param, interaction, msg='Não foi possível executar esse comando', eventType='') {
     if (!param) {
-        ephemeralRespose(interaction, msg, eventType, 3000)
+        ephemeralReply(interaction, msg, eventType, 3000)
         return false
     }
     return true

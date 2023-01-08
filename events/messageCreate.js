@@ -3,7 +3,7 @@ const { PREFIX } = require('../config');
 
 module.exports = {
     name: Events.MessageCreate,
-    async execute(client, msg) {
+    execute: async function(client, msg) {
         if (msg.author.bot) return;
         if (msg.content.startsWith(PREFIX)) {
             const noPrefixMessage = msg.content.slice(PREFIX.length);
@@ -15,7 +15,7 @@ module.exports = {
             if (!command) return;
 
             try {
-                await command.execute(msg, this.name, params);
+                await command.execute(msg, Events.MessageCreate, params);
             } catch (error) {
                 console.error(error);
                 await msg.reply({

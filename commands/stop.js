@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { ephemeralReply } = require('../utils');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,11 +8,11 @@ module.exports = {
     execute: async (interaction, eventType) => {
         const serverQueue = interaction.client.queue.get(interaction.guild.id)
         if (!serverQueue) {
-            ephemeralResponse(interaction, 'Não há nada o que parar', eventType)
+            ephemeralReply(interaction, 'Não há nada o que parar', eventType)
         } else {
             serverQueue.connection.destroy()
             interaction.client.queue.delete(interaction.guild.id)
-            ephemeralResponse(interaction, 'Fila encerrada', eventType)
+            ephemeralReply(interaction, 'Fila encerrada', eventType)
         }
     },
 };

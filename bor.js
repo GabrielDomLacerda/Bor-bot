@@ -1,9 +1,15 @@
-const { Client, Collection, GatewayIntentBits  } = require('discord.js');
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { TOKEN } = require('./config.js');
 const { importFeatures } = require('./importer.js');
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent, 
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildEmojisAndStickers,
+    ],
 });
 client.queue = new Map();
 

@@ -1,17 +1,14 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const ytdl = require('ytdl-core')
+const { ephemeralRespose } = require('../utils');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('queue')
         .setDescription('Mostra a fila atual'),
-    execute: async function (interaction) {
+    execute: async function (interaction, eventType, parameters) {
         const serverQueue = interaction.client.queue.get(interaction.guild.id)
         if (!serverQueue) {
-            await interaction.reply({
-                content: 'Lista vazia!',
-                ephemeral: true,
-            })
+            ephemeralRespose(interaction, 'Lista vazia!', eventType)
         } else {
             const queueTitles = serverQueue.songs.map((music, index) => {
                 if (index != 0) {

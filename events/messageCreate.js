@@ -15,7 +15,7 @@ module.exports = {
             if (!command) return;
 
             try {
-                await command.execute(msg, params);
+                await command.execute(msg, this.name, params);
             } catch (error) {
                 console.error(error);
                 await msg.reply({

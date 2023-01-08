@@ -4,7 +4,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName(/*insira o nome aqui*/)
         .setDescription(/* insira descrição aqui */),
-    execute: async function (interaction) {
+    execute: async function (interaction, eventType, parameters) {
         //codigo do comando
     },
 };

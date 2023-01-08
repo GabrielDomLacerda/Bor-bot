@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { GOOGLE_API_KEY } = require('../config.js')
+const { GOOGLE_API_KEY, DEFAULT_DELETE_TIME } = require('../config.js')
 const axios = require('axios').default
 const ytdl = require('ytdl-core');
 const { joinVoiceChannel,
@@ -8,6 +8,8 @@ const { joinVoiceChannel,
         AudioPlayerStatus,
         createAudioResource,
     } = require('@discordjs/voice');
+const { Events } = require('discord.js');
+const { ephemeralRespose } = require('../utils.js')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,38 +19,93 @@ module.exports = {
             option
                 .setName('link-ou-busca')
                 .setDescription('musica que vai tocar')
-                .setRequired(true)
+                // .setRequired(true)
         ),
-        playMusic: async function(client, guildId, music) {
-            const serverQueue = client.queue.get(guildId)
-            if (!(music.url)) {
-                setTimeout(() => {
-                    if (serverQueue.songs.length === 0) {
-                        serverQueue.connection.destroy() 
-                        client.queue.delete(guildId)
-                    } else {
-                        this.playMusic(client, guildId, serverQueue.songs[0])
-                    }
-                }, 5000)
+    playMusic: async function(client, guildId, music) {
+        const serverQueue = client.queue.get(guildId)
+        if (!(music.url)) {
+            setTimeout(() => {
+                if (serverQueue.songs.length === 0) {
+                    serverQueue.connection.destroy() 
+                    client.queue.delete(guildId)
+                } else {
+                    this.playMusic(client, guildId, serverQueue.songs[0])
+                }
+            }, DEFAULT_DELETE_TIME)
+            return
+        }
+        const musicResource = createAudioResource(ytdl(music.url, { filter:'audioonly', quality: 'highestaudio' }))
+        serverQueue.player.play(musicResource)
+        serverQueue.connection.subscribe(serverQueue.player)
+    },
+    enqueueMusic: async function (interaction, voiceChannel, guildId, eventType, music) {
+        const serverQueue = interaction.client.queue.get(guildId)
+        if (!serverQueue) {
+            try {
+                //CREATING QUEUE FOR GUILD
+                const queueContruct = {
+                    textChannel: interaction.channel,
+                    voiceChannel: voiceChannel,
+                    connection: joinVoiceChannel({
+                        channelId: voiceChannel.id,
+                        guildId: voiceChannel.guild.id,
+                        adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+                        selfDeaf: true, 
+                    }),
+                    songs: [],
+                    volume: 5,
+                    player: createAudioPlayer({behaviors: NoSubscriberBehavior.Pause}),
+                    playing: true,
+                }
+                //PUTTING THE MUSIC IN THE QUEUE
+                queueContruct.songs.push(music)
+                interaction.client.queue.set(interaction.guild.id, queueContruct)
+                //PLAYING MUSIC
+                this.playMusic(interaction.client, interaction.guild.id, queueContruct.songs[0])
+                //EVENTS THAT MAKE THE QUEUE RUN
+                queueContruct.player.on(AudioPlayerStatus.Idle, () => {
+                    queueContruct.songs.shift()
+                    this.playMusic(interaction.client, interaction.guild.id, queueContruct.songs[0])
+                })
+                ephemeralRespose(interaction, `Agora tocando - ${music.title}`, eventType)
+                return queueContruct
+            } catch (error) {
+                console.error(error)
+                interaction.client.queue.delete(interaction.guild.id)
+                return null
+            }
+        }
+        //IF THE GUILD QUEUE EXISTS, ENQUEUE THE MUSIC
+        ephemeralRespose(interaction, `${music.title} adicionado à fila`, eventType)
+        serverQueue.songs.push(music)
+        return serverQueue
+    },
+    execute: async function (interaction, eventType, parameters) {
+        try {
+            //HANDLING PAUSE
+            if ((eventType == Events.MessageCreate && parameters === [])
+             || (eventType == Events.InteractionCreate && !interaction.options.getString('link-ou-busca'))) {
+                const serverQueue = interaction.cliente.queue.get(interaction.guild.id)
+                if (!serverQueue) {
+                    ephemeralRespose(interaction, 'Insira uma música, por favor', eventType)
+                } else {
+                    serverQueue.player.unpause()
+                    ephemeralRespose(interaction, `Agora tocando - ${serverQueue.songs[0]}`, eventType)    
+                }
                 return
             }
-            const musicResource = createAudioResource(ytdl(music.url, { filter:'audioonly', quality: 'highestaudio' }))
-            serverQueue.player.play(musicResource)
-            serverQueue.connection.subscribe(serverQueue.player)
-        },
-    execute: async function (interaction, parameters) {
-        try {
-            const isMessage = parameters? true : false
+            
+            //TESTING IF THE CALLER IS IN A VOICE CHANNEL
             const voiceChannel = interaction.member.voice.channel
-            if (!await replyIfNullOrFalse(voiceChannel, interaction, "Entre em um canal de voz primeiro!", isMessage)) { return }
-
+            if (!await replyIfNullOrFalse(voiceChannel, interaction, "Entre em um canal de voz primeiro!", eventType)) { return }
+            
+            //CHECKING SERVER PERMISSIONS FOR THIS BOT
             const permissions = voiceChannel.permissionsFor(interaction.client.user)
             const hasPermission = (permissions.has('Connect') && permissions.has('Speak'))
-            if (!await replyIfNullOrFalse(hasPermission, interaction, "Não possuo permissão para isso", isMessage)) { return }
+            if (!await replyIfNullOrFalse(hasPermission, interaction, "Não possuo permissão para isso", eventType)) { return }
 
-            const params = isMessage? parameters.join(' '): interaction.options.getString('link-ou-busca')
-            if (!await replyIfNullOrFalse(params, interaction, "Por favor, insira uma música", isMessage)) { return }
-
+            //HANDLING PARAMETERS AND SEARCHING THE MUSIC WITH YOUTUBE API AND YTDL-CORE
+            const params = eventType==Events.MessageCreate? parameters.join(' '): interaction.options.getString('link-ou-busca')
             const musicLink = isLink(params) ? params : buildUrl((await getYtbData(params)).id.videoId)
             const musicInfo = (await ytdl.getInfo(musicLink)).videoDetails
             const music = {
@@ -56,46 +113,12 @@ module.exports = {
                 url: musicLink
             }
 
-            const serverQueue = interaction.client.queue.get(interaction.guild.id)
-            if (!serverQueue) {
-                try {
-                    const queueContruct = {
-                        textChannel: interaction.channel,
-                        voiceChannel: voiceChannel,
-                        connection: joinVoiceChannel({
-                            channelId: voiceChannel.id,
-                            guildId: voiceChannel.guild.id,
-                            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-                            // selfDeaf: true, 
-                        }),
-                        songs: [],
-                        volume: 5,
-                        player: createAudioPlayer({behaviors: NoSubscriberBehavior.Pause}),
-                        playing: true,
-                    }
-                    queueContruct.songs.push(music)
-                    interaction.client.queue.set(interaction.guild.id, queueContruct)
-                    this.playMusic(interaction.client, interaction.guild.id, queueContruct.songs[0])
-                    queueContruct.player.on(AudioPlayerStatus.Idle, () => {
-                        queueContruct.songs.shift()
-                        this.playMusic(interaction.client, interaction.guild.id, queueContruct.songs[0])
-                    })
-                } catch (error) {
-                    console.error(error)
-                    interaction.client.queue.delete(interaction.guild.id)
-                }
-            } else {
-                serverQueue.songs.push(music)
-            }
+            await this.enqueueMusic(interaction, voiceChannel, interaction.guild.id, eventType, music)
         } catch (error) {
             console.error(error)
-            interaction.reply({
-                content: "Não foi possível executar esse comando",
-                ephemeral: true,
-            })
+            ephemeralRespose(interaction, "Não foi possível executar esse comando", eventType)
         }
     },
-    
 }
 
 function buildUrl (id) {
@@ -134,15 +157,9 @@ function isLink (str) {
     return ytbRegex.test(str);
 }
 
-async function replyIfNullOrFalse(param, interaction, msg='Não foi possível executar esse comando', isMessage=false) {
+async function replyIfNullOrFalse(param, interaction, msg='Não foi possível executar esse comando', eventType='') {
     if (!param) {
-        const message = await interaction.reply({
-            content: msg, 
-            ephemeral: true
-        })
-        if (isMessage) {
-            setTimeout(async () => await message.delete(), 3000)
-        }
+        ephemeralRespose(interaction, msg, eventType, 3000)
         return false
     }
     return true

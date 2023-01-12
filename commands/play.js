@@ -23,7 +23,7 @@ module.exports = {
         ),
     playMusic: async function(client, guildId, music) {
         const serverQueue = client.queue.get(guildId)
-        if (!(music.url)) {
+        if (!music || !(music.url)) {
             setTimeout(() => {
                 if (serverQueue.songs.length === 0) {
                     serverQueue.connection.destroy() 
@@ -146,7 +146,7 @@ module.exports = {
                     url: '',
                 }
                 if (isLink(params)) {
-                    music.url = params
+                    music.url = params.replace('music.', '')
                     music.title = (await ytdl.getInfo(params)).videoDetails.title
                 } else {
                     const musicInfo = await getYtbData(params)

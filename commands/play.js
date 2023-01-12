@@ -67,7 +67,6 @@ module.exports = {
                     queueContruct.songs.shift()
                     this.playMusic(interaction.client, interaction.guild.id, queueContruct.songs[0])
                 })
-                ephemeralReply(interaction, `Agora tocando - ${music.title}`, eventType)
                 return queueContruct
             } catch (error) {
                 console.error(error)
@@ -76,7 +75,6 @@ module.exports = {
             }
         }
         //IF THE GUILD QUEUE EXISTS, ENQUEUE THE MUSIC
-        ephemeralReply(interaction, `${music.title} adicionado à fila`, eventType)
         serverQueue.songs.push(music)
         return serverQueue
     },
@@ -106,14 +104,64 @@ module.exports = {
 
             //HANDLING PARAMETERS AND SEARCHING THE MUSIC WITH YOUTUBE API AND YTDL-CORE
             const params = eventType==Events.MessageCreate? parameters.join(' '): interaction.options.getString('link-ou-busca')
-            const musicLink = isLink(params) ? params : buildUrl((await getYtbData(params)).id.videoId)
-            const musicInfo = (await ytdl.getInfo(musicLink)).videoDetails
-            const music = {
-                title: musicInfo.title,
-                url: musicLink
-            }
+            if (isLink(params) && params.includes('list=')) {
+                const url = new URL(params);
+                const playlistId = url.searchParams.get('list')
+                let musicCount = 0;
+                let playlistJson = await getYtbPlaylistVideos(playlistId);
+                const playlistTitle = playlistJson? (await getYtbPlaylistData(playlistId)).snippet.title : ''
+                for (const video of playlistJson.items) {
+                    const music = {
+                        title: video.snippet.title,
+                        url: buildUrl(video.snippet.resourceId.videoId),
+                    }
+                    if (music.title.toLowerCase() == "private video") continue
+                    await this.enqueueMusic(interaction, voiceChannel, interaction.guild.id, eventType, music);
+                    musicCount++;
+                }
+                while (playlistJson && 'nextPageToken' in playlistJson) {
+                    const nextPage = playlistJson.nextPageToken
+                    playlistJson = await getYtbPlaylistVideos(playlistId, nextPage);
+                    for (const video of playlistJson.items) {
+                        const music = {
+                            title: video.snippet.title,
+                            url: buildUrl(video.snippet.resourceId.videoId),
+                        }
+                        if (music.title.toLowerCase() == "private video") continue
+                        await this.enqueueMusic(interaction, voiceChannel, interaction.guild.id, eventType, music);
+                        musicCount++;
+                    }
+                }
+                if (musicCount > 0) {
+                    await ephemeralReply(interaction, `${musicCount} músicas adicionadas à fila de (${playlistTitle})`, eventType);
+                } else if (playlistTitle != '') {
+                    await ephemeralReply(interaction, `Ocorreu um erro tentando adicionar a playlist (${playlistTitle})`, eventType);
+                } else {
+                    await ephemeralReply(interaction, `Ocorreu um erro tentando adicionar a playlist`, eventType);
+                }
 
-            await this.enqueueMusic(interaction, voiceChannel, interaction.guild.id, eventType, music)
+            } else {
+                const music = {
+                    title: '',
+                    url: '',
+                }
+                if (isLink(params)) {
+                    music.url = params
+                    music.title = (await ytdl.getInfo(params)).videoDetails.title
+                } else {
+                    const musicInfo = await getYtbData(params)
+                    music.url = buildUrl(musicInfo.id.videoId)
+                    music.title = musicInfo.snippet.title
+                }
+    
+                await this.enqueueMusic(interaction, voiceChannel, interaction.guild.id, eventType, music)
+
+                if (interaction.client.queue.get(interaction.guild.id).songs.length > 1) {
+                    ephemeralReply(interaction, `${music.title} adicionado à fila`, eventType)
+                } else {
+                    ephemeralReply(interaction, `Agora tocando - ${music.title}`, eventType)
+                }
+            }
         } catch (error) {
             console.error(error)
             ephemeralReply(interaction, "Não foi possível executar esse comando", eventType)
@@ -128,18 +176,45 @@ function buildUrl (id) {
 async function getYtbData (searchText) {
     const baseURL = "https://youtube.googleapis.com/youtube/v3/search"
     const params = {
-        part: "id",
-          q: searchText,
-          key: GOOGLE_API_KEY,
-          maxResults: 1
+        part: "snippet",
+        q: searchText,
+        key: GOOGLE_API_KEY,
+        maxResults: 1
     }
     const data = await makeRequest(baseURL, params)
     return data.items[0];
 }
 
+async function getYtbPlaylistVideos(playlistId, nextPage=null) {
+    const baseURL = 'https://www.googleapis.com/youtube/v3/playlistItems'
+    const params = {
+        part: "snippet",
+        maxResults: 500,
+        playlistId: playlistId,
+        key: GOOGLE_API_KEY,
+    }
+    if (nextPage) {
+        params.pageToken = nextPage
+    }
+    const data = await makeRequest(baseURL, params)
+    return data
+}
+
+async function getYtbPlaylistData(playlistId) {
+    const baseURL = 'https://www.googleapis.com/youtube/v3/playlists'
+    const params = {
+        part: "snippet",
+        maxResults: 1,
+        id: playlistId,
+        key: GOOGLE_API_KEY,
+    }
+    const data = await makeRequest(baseURL, params)
+    return data.items[0]
+}
+
 async function makeRequest (base, searchParams) {
     try {
-        const params = { params : searchParams}
+        const params = { params : searchParams }
         const response = await axios.get(base, params)
         return response.data
     } catch (error) {

@@ -12,15 +12,20 @@ importFeatures('commands', async (command) => {
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 
-// for guild-based commands
-// rest.put(Routes.applicationGuildCommands(CLIENT_ID, '946552147963686912'), { body: [] })
-// 	.then(() => console.log('Successfully deleted all guild commands.'))
-// 	.catch(console.error);
-
-// for global commands
-const deleteGlobal = async () => await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] })
-.then(() => console.log('Successfully deleted all application commands.'))
-.catch(console.error);
+module.exports = {
+    // for global commands
+    deleteGlobal : async function () {
+        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] })
+        .then(() => console.log('Successfully deleted all application commands.'))
+        .catch(console.error)
+    },
+    // for guild-based commands
+    deleteByGuild : async function (guildId) {
+        await rest.put(Routes.applicationGuildCommands(CLIENT_ID, guildId), { body: [] })
+        .then(() => console.log('Successfully deleted all guild commands.'))
+        .catch(console.error)
+    },
+}
 
 
 const loadAllCommandsGlobal = async () => {

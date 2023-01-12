@@ -38,25 +38,17 @@ module.exports = {
                                 .join('\n')
                         )
                 }
-                let actualLength = 0
                 const pages = []
                 let page = '';
                 for (const title of queueTitles) {
-                    actualLength += title.length
-                    if (actualLength < maxLength) {
+                    if (page.length + title.length < maxLength) {
                         page += `${title}\n`
                     } else {
                         if (page.endsWith('\n')) {
                             page = page.slice(0, page.lastIndexOf('\n') - 1)
                         }
                         pages.push(page)
-                        if (actualLength > maxLength) {
-                            page = `${title}\n`
-                            actualLength = title.length
-                        } else {
-                            page = ''
-                            actualLength = 0
-                        }
+                        page = `${title}\n`
                     }
                 }
                 if (page != '') {

@@ -2,12 +2,9 @@ const { Events } = require("discord.js");
 
 module.exports = {
     name: Events.InteractionCreate,
-    execute: async function(client, interaction) {
-        // console.log(
-        //     `${interaction.user.tag} fez uma interação no canal #${interaction.channel.name}.`
-        // );
+    execute: async function (client, interaction) {
         const command = client.commands.get(interaction.commandName);
-        
+
         if (!command) return;
 
         try {
@@ -15,7 +12,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: 'Tive um erro executando isso!',
+                content: "Tive um erro executando isso!",
                 ephemeral: true,
             });
         }

@@ -6,11 +6,15 @@ module.exports = {
     async execute(client) {
         if (client.queue) {
             client.queue.forEach((k, serverQueue) => {
-                if (serverQueue.player) {serverQueue.player.stop()}
-                if (serverQueue.connection) {serverQueue.connection.destroy()}
+                if (serverQueue.player) {
+                    serverQueue.player.stop();
+                }
+                if (serverQueue.connection) {
+                    serverQueue.connection.destroy();
+                }
             });
         }
         console.log(`${client.user.tag} desligando!`);
-        client.destroy()
+        client.destroy();
     },
 };

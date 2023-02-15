@@ -1,4 +1,4 @@
-const { config } = require('dotenv');
+const { config } = require("dotenv");
 
 config();
 
@@ -10,6 +10,6 @@ module.exports = {
     GUILD_ID: process.env.GUILD_ID,
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
     GOOGLE_SECRET_TOKEN: process.env.GOOGLE_SECRET_TOKEN,
-    PREFIX: '!',
+    PREFIX: "!",
     DEFAULT_DELETE_TIME: 5000,
 };

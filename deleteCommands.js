@@ -1,3 +1,3 @@
-const { deleteByGuild, deleteGlobal } = require('./server-commands')
+const { deleteByGuild, deleteGlobal } = require("./server-commands");
 
-deleteGlobal()
+deleteGlobal();

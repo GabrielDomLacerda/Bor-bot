@@ -1,14 +1,14 @@
-const { Events } = require('discord.js');
-const { PREFIX } = require('../config');
+const { Events } = require("discord.js");
+const { PREFIX } = require("../config");
 
 module.exports = {
     name: Events.MessageCreate,
-    execute: async function(client, msg) {
+    execute: async function (client, msg) {
         if (msg.author.bot) return;
         if (msg.content.startsWith(PREFIX)) {
             const noPrefixMessage = msg.content.slice(PREFIX.length);
-            const params = noPrefixMessage.split(' ')
-            const name = params.shift()
+            const params = noPrefixMessage.split(" ");
+            const name = params.shift();
 
             const command = client.commands.get(name);
 
@@ -19,7 +19,7 @@ module.exports = {
             } catch (error) {
                 console.error(error);
                 await msg.reply({
-                    content: 'Tive um erro executando isso!',
+                    content: "Tive um erro executando isso!",
                     ephemeral: true,
                 });
             }

@@ -169,6 +169,17 @@ module.exports = {
                 eventType == Events.MessageCreate
                     ? parameters.join(" ")
                     : interaction.options.getString("link-ou-busca");
+            // if (
+            //     ((string) => {
+            //         const spotifyUrlRegex =
+            //             /^https?:\/\/(?:open|play)\.spotify\.com\/track\/([a-zA-Z0-9]+)$/;
+            //         return spotifyUrlRegex.test(string);
+            //     })(params)
+            // ) {
+            //     const test = await getSpotifyData(interaction.client, params);
+            //     console.log(test);
+            //     return;
+            // }
             if (isLink(params) && params.includes("list=")) {
                 const url = new URL(params);
                 const playlistId = url.searchParams.get("list");
@@ -290,6 +301,14 @@ function buildUrl(id) {
     return `https://www.youtube.com/watch?v=${id}`;
 }
 
+async function getSpotifyData(client, spotifyUrl) {
+    const trackId = spotifyUrl.match(
+        /^https:\/\/open\.spotify\.com\/track\/([a-zA-Z0-9]+)$/
+    );
+    const track = await client.spotify.getTrack(trackId[1]);
+    return track;
+}
+
 async function getYtbData(searchText) {
     const baseURL = "https://youtube.googleapis.com/youtube/v3/search";
     const params = {
@@ -341,12 +360,6 @@ async function makeRequest(base, searchParams) {
 
 function isLink(str) {
     const ytbRegex = /^(https?\:\/\/)?((www\.)?youtube\.com|youtu\.be)\/.+$/;
-    const httpsRegex =
-        /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
-    const httpRegex =
-        /^http?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
-    const linkRegex =
-        /^[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
 
     // return httpRegex.test(str) || httpsRegex.test(str) || linkRegex.test(str) || ytbRegex.test(str);
     return ytbRegex.test(str);

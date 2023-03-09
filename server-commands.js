@@ -1,5 +1,5 @@
 const { REST, Routes } = require("discord.js");
-const { TOKEN, CLIENT_ID } = require("./config.js");
+const { DS_TOKEN, DS_CLIENT_ID } = require("./config.js");
 const { importFeatures } = require("./importer.js");
 
 const commands = [];
@@ -10,13 +10,13 @@ importFeatures("commands", async (command) => {
     }
 });
 
-const rest = new REST({ version: "10" }).setToken(TOKEN);
+const rest = new REST({ version: "10" }).setToken(DS_TOKEN);
 
 module.exports = {
     // for global commands
     deleteGlobal: async function () {
         await rest
-            .put(Routes.applicationCommands(CLIENT_ID), { body: [] })
+            .put(Routes.applicationCommands(DS_CLIENT_ID), { body: [] })
             .then(() =>
                 console.log("Successfully deleted all application commands.")
             )
@@ -25,7 +25,7 @@ module.exports = {
     // for guild-based commands
     deleteByGuild: async function (guildId) {
         await rest
-            .put(Routes.applicationGuildCommands(CLIENT_ID, guildId), {
+            .put(Routes.applicationGuildCommands(DS_CLIENT_ID, guildId), {
                 body: [],
             })
             .then(() => console.log("Successfully deleted all guild commands."))
@@ -39,7 +39,7 @@ const loadAllCommandsGlobal = async () => {
             `Started refreshing ${commands.length} application (/) commands.`
         );
 
-        const data = await rest.put(Routes.applicationCommands(CLIENT_ID), {
+        const data = await rest.put(Routes.applicationCommands(DS_CLIENT_ID), {
             body: commands,
         });
 

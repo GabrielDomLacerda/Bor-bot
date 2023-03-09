@@ -1,6 +1,11 @@
 const { Client, Collection, GatewayIntentBits } = require("discord.js");
-const { TOKEN } = require("./config.js");
+const {
+    DS_TOKEN,
+    SPOTIFY_CLIENT_ID,
+    SPOTIFY_CLIENT_SECRET,
+} = require("./config.js");
 const { importFeatures } = require("./importer.js");
+const SpotifyWebApi = require("spotify-web-api-node");
 
 const client = new Client({
     intents: [
@@ -12,6 +17,17 @@ const client = new Client({
     ],
 });
 client.queue = new Map();
+client.spotify = new SpotifyWebApi({
+    clientId: SPOTIFY_CLIENT_ID,
+    clientSecret: SPOTIFY_CLIENT_SECRET,
+});
+
+client.spotify
+    .clientCredentialsGrant()
+    .then((data) => {
+        client.spotify.setAccessToken(data.body.access_token);
+    })
+    .catch((error) => console.error(error));
 
 client.commands = new Collection();
 importFeatures("commands", (command, path) => {
@@ -38,4 +54,4 @@ importFeatures("events", (event, path) => {
     }
 });
 
-client.login(TOKEN);
+client.login(DS_TOKEN);
